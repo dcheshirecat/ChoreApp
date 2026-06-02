@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+<meta name="theme-color" content="#FF6B35"/>
+<title>Chore Champion</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+:root{
+  --or:#FF6B35;--pk:#EF476F;--gn:#06D6A0;--bl:#118AB2;
+  --pu:#9B5DE5;--yw:#FFD166;--bg:#FFF8F0;--cd:#FFFFFF;
+  --tx:#2D2D2D;--mt:#8A8A8A;--r:18px;--sh:0 4px 20px rgba(0,0,0,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);
+     min-height:100vh;position:fixed;inset:0;overflow:hidden}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,var(--or),var(--pk));
+     padding:18px 20px 52px;position:relative;flex-shrink:0}
+.hdr::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:44px;
+            background:var(--bg);border-radius:50% 50% 0 0/80% 80% 0 0}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.app-name{font-family:'Fredoka One',cursive;font-size:26px;color:#fff;
+          text-shadow:2px 3px 0 rgba(0,0,0,.15)}
+.date-pill{background:rgba(255,255,255,.25);border-radius:12px;padding:5px 12px;
+           color:#fff;font-weight:700;font-size:13px}
+.hdr-sub{color:rgba(255,255,255,.9);font-size:13px;font-weight:700}
+
+/* TABS */
+.tabs{display:flex;gap:8px;padding:8px 16px 10px;background:var(--bg);flex-shrink:0}
+.tab{flex:1;padding:9px 6px;border:none;border-radius:12px;
+     font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+     cursor:pointer;background:#fff;color:var(--mt);
+     box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .18s}
+.tab.on{background:var(--or);color:#fff;
+        box-shadow:0 4px 14px rgba(255,107,53,.40);transform:translateY(-1px)}
+
+/* SCROLL AREA */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+        padding:0 16px 90px}
+
+/* VIEWS */
+.view{display:none}.view.on{display:block}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 0 4px}
+.stat{background:var(--cd);border-radius:14px;padding:10px 8px;text-align:center;
+      box-shadow:var(--sh)}
+.stat-n{font-family:'Fredoka One',cursive;font-size:22px;color:var(--or)}
+.stat-l{font-size:10px;font-weight:800;color:var(--mt);margin-top:2px}
+
+/* SECTION LABEL */
+.sec{font-family:'Fredoka One',cursive;font-size:17px;color:var(--or);
+     margin:14px 0 8px;display:flex;align-items:center;gap:6px}
+
+/* CHORE CARD */
+.card{background:var(--cd);border-radius:var(--r);padding:13px 14px;
+      margin-bottom:9px;box-shadow:var(--sh);display:flex;align-items:center;
+      gap:12px;border-left:5px solid var(--or);animation:si .25s ease}
+@keyframes si{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.card.done{opacity:.5;background:#f5f5f5}.card.done .cn{text-decoration:line-through}
+.cem{font-size:24px;width:36px;text-align:center;flex-shrink:0}
+.ci{flex:1;min-width:0}
+.cn{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cm{font-size:11px;color:var(--mt);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap}
+.ftag{background:var(--yw);color:#7a5a00;border-radius:7px;padding:2px 7px;font-weight:700;font-size:10px}
+.ttag{background:#e8f4ff;color:var(--bl);border-radius:7px;padding:2px 7px;font-weight:700;font-size:10px}
+.acts{display:flex;gap:5px;flex-shrink:0}
+.bi{width:32px;height:32px;border:none;border-radius:9px;font-size:14px;
+    cursor:pointer;transition:transform .12s;display:flex;align-items:center;justify-content:center}
+.bi:active{transform:scale(.88)}
+.bck{background:#e8fff6;color:var(--gn)}.bed{background:#fff3e8;color:var(--or)}
+.bdl{background:#ffe8ed;color:var(--pk)}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--mt)}
+.empty .be{font-size:52px;margin-bottom:10px}
+.empty p{font-weight:700;font-size:14px}
+
+/* FAB */
+.fab{position:fixed;bottom:20px;right:20px;width:56px;height:56px;
+     background:linear-gradient(135deg,var(--or),var(--pk));border:none;
+     border-radius:50%;font-size:24px;color:#fff;
+     box-shadow:0 6px 20px rgba(255,107,53,.50);cursor:pointer;z-index:90;
+     display:flex;align-items:center;justify-content:center;transition:transform .18s}
+.fab:active{transform:scale(.90)}
+
+/* CALENDAR */
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px}
+.cal-t{font-family:'Fredoka One',cursive;font-size:19px}
+.cal-nav{background:none;border:none;font-size:20px;cursor:pointer;padding:4px 10px;color:var(--tx)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px}
+.cdl{text-align:center;font-size:10px;font-weight:800;color:var(--mt);padding:3px 0}
+.cc{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;background:#fff;cursor:pointer;
+    box-shadow:0 1px 4px rgba(0,0,0,.06);transition:transform .12s;padding:2px;position:relative}
+.cc:active{transform:scale(.90)}
+.cc.today{background:linear-gradient(135deg,var(--or),var(--pk))}
+.cc.today .cnum{color:#fff}
+.cc.sel{box-shadow:0 0 0 2px var(--bl)}
+.cc.empty{background:transparent;box-shadow:none;cursor:default}
+.cnum{font-size:12px;font-weight:800}
+.cdots{display:flex;gap:2px;margin-top:1px;flex-wrap:wrap;justify-content:center}
+.cdot{width:5px;height:5px;border-radius:50%}
+.ddet{background:var(--cd);border-radius:var(--r);padding:14px;margin-top:6px;
+      box-shadow:var(--sh);min-height:70px}
+.ddet-t{font-family:'Fredoka One',cursive;font-size:15px;color:var(--or);margin-bottom:8px}
+.dchore{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:10px;
+        background:#f9f9f9;margin-bottom:5px;font-size:13px;font-weight:700}
+.noday{color:var(--mt);font-size:13px;text-align:center;padding:14px;font-weight:600}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+    backdrop-filter:blur(3px);z-index:200;align-items:flex-end}
+.ov.on{display:flex}
+.modal{background:var(--bg);border-radius:22px 22px 0 0;padding:20px 18px 32px;
+       width:100%;max-height:92vh;overflow-y:auto;animation:su .28s ease}
+@keyframes su{from{transform:translateY(100%)}to{transform:none}}
+.mhndl{width:38px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 14px}
+.mtit{font-family:'Fredoka One',cursive;font-size:21px;color:var(--or);
+      margin-bottom:18px;text-align:center}
+.fg{margin-bottom:12px}
+.fl{font-size:11px;font-weight:800;color:var(--mt);text-transform:uppercase;
+    letter-spacing:.4px;margin-bottom:5px;display:block}
+.fi,.fs{width:100%;padding:11px 13px;border:2px solid #e8e8e8;border-radius:11px;
+        font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;
+        background:#fff;color:var(--tx);outline:none;transition:border-color .18s;
+        -webkit-appearance:none}
+.fi:focus,.fs:focus{border-color:var(--or)}
+.epk{display:flex;gap:7px;flex-wrap:wrap}
+.eo{width:38px;height:38px;border-radius:9px;border:2px solid transparent;
+    background:#fff;font-size:19px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all .13s}
+.eo.on{border-color:var(--or);background:#fff3e8;transform:scale(1.08)}
+.cpk{display:flex;gap:7px}
+.cdx{width:30px;height:30px;border-radius:50%;cursor:pointer;
+     border:3px solid transparent;transition:transform .13s}
+.cdx.on{border-color:#222;transform:scale(1.15)}
+.frqs{display:flex;gap:6px;flex-wrap:wrap}
+.fq{padding:6px 11px;border-radius:9px;border:2px solid #e8e8e8;
+    font-size:11px;font-weight:800;background:#fff;cursor:pointer;
+    transition:all .13s;color:var(--mt)}
+.fq.on{background:var(--pu);border-color:var(--pu);color:#fff}
+.dpk{display:flex;gap:5px;flex-wrap:wrap}
+.dc{padding:6px 9px;border-radius:9px;border:2px solid #e8e8e8;
+    font-size:11px;font-weight:800;background:#fff;cursor:pointer;
+    transition:all .13s;color:var(--mt)}
+.dc.on{background:var(--or);border-color:var(--or);color:#fff}
+.bsv{width:100%;padding:14px;background:linear-gradient(135deg,var(--or),var(--pk));
+     border:none;border-radius:13px;color:#fff;font-family:'Fredoka One',cursive;
+     font-size:17px;cursor:pointer;box-shadow:0 4px 16px rgba(255,107,53,.40);
+     margin-top:8px;transition:transform .13s}
+.bsv:active{transform:scale(.97)}
+.bcn{width:100%;padding:11px;background:none;border:none;color:var(--mt);
+     font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px}
+
+/* TOAST */
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);
+       background:var(--gn);color:#fff;padding:9px 18px;border-radius:13px;
+       font-weight:700;font-size:13px;box-shadow:0 4px 16px rgba(6,214,160,.40);
+       z-index:999;opacity:0;transition:opacity .25s;white-space:nowrap;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-row">
+      <div class="app-name">🧹 Chore Champion</div>
+      <div class="date-pill" id="hDate"></div>
+    </div>
+    <div class="hdr-sub" id="hSub"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tList" onclick="sw('list')">📋 List</button>
+    <button class="tab" id="tCal"  onclick="sw('cal')">📅 Calendar</button>
+  </div>
+
+  <div class="scroll">
+    <!-- LIST VIEW -->
+    <div class="view on" id="vList">
+      <div class="stats" id="stats"></div>
+      <div id="todayList"></div>
+      <div id="upList"></div>
+    </div>
+
+    <!-- CALENDAR VIEW -->
+    <div class="view" id="vCal">
+      <div class="cal-hdr">
+        <button class="cal-nav" onclick="calNav(-1)">◀</button>
+        <div class="cal-t" id="calTitle"></div>
+        <button class="cal-nav" onclick="calNav(1)">▶</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="ddet" id="ddet"><div class="noday">Tap a day to see chores 👆</div></div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" onclick="openModal(null)">＋</button>
+
+<!-- MODAL -->
+<div class="ov" id="ov" onclick="ovClick(event)">
+  <div class="modal">
+    <div class="mhndl"></div>
+    <div class="mtit" id="mtit">New Chore ✨</div>
+
+    <div class="fg">
+      <label class="fl">Chore Name</label>
+      <input class="fi" id="cName" placeholder="e.g. Wash Dishes" maxlength="30"/>
+    </div>
+    <div class="fg">
+      <label class="fl">Emoji</label>
+      <div class="epk" id="epk"></div>
+    </div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div class="cpk" id="cpk"></div>
+    </div>
+    <div class="fg">
+      <label class="fl">Frequency</label>
+      <div class="frqs" id="frqs">
+        <div class="fq on" data-f="daily"    onclick="pickFreq(this)">Every day</div>
+        <div class="fq"    data-f="weekdays" onclick="pickFreq(this)">Weekdays</div>
+        <div class="fq"    data-f="weekends" onclick="pickFreq(this)">Weekends</div>
+        <div class="fq"    data-f="odd"      onclick="pickFreq(this)">Odd days</div>
+        <div class="fq"    data-f="even"     onclick="pickFreq(this)">Even days</div>
+        <div class="fq"    data-f="weekly"   onclick="pickFreq(this)">Weekly</div>
+        <div class="fq"    data-f="custom"   onclick="pickFreq(this)">Custom</div>
+      </div>
+    </div>
+    <div class="fg" id="dayRow" style="display:none">
+      <label class="fl">Which days?</label>
+      <div class="dpk" id="dpk">
+        <div class="dc" data-d="0" onclick="toggleDay(this)">Sun</div>
+        <div class="dc" data-d="1" onclick="toggleDay(this)">Mon</div>
+        <div class="dc" data-d="2" onclick="toggleDay(this)">Tue</div>
+        <div class="dc" data-d="3" onclick="toggleDay(this)">Wed</div>
+        <div class="dc" data-d="4" onclick="toggleDay(this)">Thu</div>
+        <div class="dc" data-d="5" onclick="toggleDay(this)">Fri</div>
+        <div class="dc" data-d="6" onclick="toggleDay(this)">Sat</div>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Reminder Time</label>
+      <input class="fi" type="time" id="cTime" value="08:00"/>
+    </div>
+    <button class="bsv" onclick="saveChore()">Save Chore 🎉</button>
+    <button class="bcn" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+const EMOJIS=['🧹','🍽️','👕','🗑️','🛁','🧺','🌿','🪣','🧼','🐾','🛒','🪴','💊','📦','🔧','🛏️','🐶','🧽','🪥','🍳'];
+const COLS=['#FF6B35','#EF476F','#9B5DE5','#118AB2','#06D6A0','#FFD166','#F77F00','#2EC4B6'];
+const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let chores = [], done = {}, editId = null;
+let selEmoji = EMOJIS[0], selCol = COLS[0], selFreq = 'daily', selDays = [];
+let calY, calM, selCalDay = null;
+const NOW = new Date();
+const TK = `${NOW.getFullYear()}-${NOW.getMonth()}-${NOW.getDate()}`;
+
+function load() {
+  try { chores = JSON.parse(localStorage.getItem('cc_chores') || '[]'); } catch(e){chores=[];}
+  try { done   = JSON.parse(localStorage.getItem('cc_done')   || '{}'); } catch(e){done={};}
+  // purge old done keys
+  if (!done[TK]) done = {[TK]:[]};
+  save();
+}
+function save() {
+  localStorage.setItem('cc_chores', JSON.stringify(chores));
+  localStorage.setItem('cc_done',   JSON.stringify(done));
+}
+
+// ── FREQUENCY ──────────────────────────────────────────────────────────────
+function dueOn(c, date) {
+  const d = date.getDate(), dow = date.getDay();
+  if (c.freq==='daily')    return true;
+  if (c.freq==='weekdays') return dow>=1&&dow<=5;
+  if (c.freq==='weekends') return dow===0||dow===6;
+  if (c.freq==='odd')      return d%2!==0;
+  if (c.freq==='even')     return d%2===0;
+  if (c.freq==='weekly'||c.freq==='custom') return (c.days||[]).includes(dow);
+  return false;
+}
+function fLabel(c) {
+  if (c.freq==='daily')    return 'Every day';
+  if (c.freq==='weekdays') return 'Weekdays';
+  if (c.freq==='weekends') return 'Weekends';
+  if (c.freq==='odd')      return 'Odd days';
+  if (c.freq==='even')     return 'Even days';
+  if (c.freq==='weekly'||c.freq==='custom') return (c.days||[]).map(d=>DAY_NAMES[d]).join(', ');
+  return c.freq;
+}
+function choresFor(date) { return chores.filter(c=>dueOn(c,date)); }
+
+// ── RENDER LIST ────────────────────────────────────────────────────────────
+function renderList() {
+  const tc = choresFor(NOW);
+  const dk = done[TK]||[];
+  const pending = tc.filter(c=>!dk.includes(c.id)).length;
+
+  document.getElementById('hDate').textContent =
+    NOW.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  document.getElementById('hSub').textContent =
+    tc.length===0 ? 'No chores today! 🎉' :
+    pending===0   ? 'All done for today! 🏆' :
+    `${pending} chore${pending!==1?'s':''} left today`;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-n">${chores.length}</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n">${tc.length}</div><div class="stat-l">Today</div></div>
+    <div class="stat"><div class="stat-n">${dk.length}</div><div class="stat-l">Done</div></div>`;
+
+  const tEl = document.getElementById('todayList');
+  if (chores.length===0) {
+    tEl.innerHTML='<div class="empty"><div class="be">🌟</div><p>Add your first chore below!</p></div>';
+  } else if (tc.length===0) {
+    tEl.innerHTML='<div class="empty"><div class="be">🎉</div><p>Nothing due today, enjoy your day!</p></div>';
+  } else {
+    tEl.innerHTML='<div class="sec">📅 Today</div>'+tc.map(c=>cardHTML(c,dk.includes(c.id))).join('');
+  }
+
+  let up='';
+  for(let i=1;i<=3;i++){
+    const d=new Date(NOW); d.setDate(NOW.getDate()+i);
+    const dc=choresFor(d);
+    if(dc.length){
+      const lbl=i===1?'Tomorrow':d.toLocaleDateString('en-US',{weekday:'long'});
+      up+=`<div class="sec" style="font-size:13px;color:var(--mt)">📆 ${lbl}</div>`+
+          dc.map(c=>cardHTML(c,false,true)).join('');
+    }
+  }
+  document.getElementById('upList').innerHTML=up;
+}
+
+function cardHTML(c, isDone=false, preview=false) {
+  const tTag = c.time ? `<span class="ttag">⏰ ${fmt12(c.time)}</span>` : '';
+  const acts = preview ? '' :
+    `<div class="acts">
+       <button class="bi bck" onclick="toggleDone('${c.id}')">${isDone?'↩️':'✅'}</button>
+       <button class="bi bed" onclick="openModal('${c.id}')">✏️</button>
+       <button class="bi bdl" onclick="del('${c.id}')">🗑️</button>
+     </div>`;
+  return `<div class="card${isDone?' done':''}" style="border-left-color:${c.col||'var(--or)'}">
+    <div class="cem">${c.emoji||'🧹'}</div>
+    <div class="ci">
+      <div class="cn">${esc(c.name)}</div>
+      <div class="cm"><span class="ftag">${fLabel(c)}</span>${tTag}</div>
+    </div>${acts}
+  </div>`;
+}
+
+function fmt12(t){
+  if(!t)return'';const[h,m]=t.split(':').map(Number);
+  return`${(h%12)||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── DONE TOGGLE ────────────────────────────────────────────────────────────
+function toggleDone(id) {
+  const a=done[TK]||[]; const i=a.indexOf(id);
+  if(i===-1) a.push(id); else a.splice(i,1);
+  done[TK]=a; save(); renderList();
+}
+
+// ── DELETE ─────────────────────────────────────────────────────────────────
+function del(id) {
+  if(!confirm('Delete this chore?')) return;
+  cancelReminder(id);
+  chores=chores.filter(c=>c.id!==id);
+  save(); renderList(); renderCal(); toast('🗑️ Chore deleted');
+}
+
+// ── TAB SWITCH ─────────────────────────────────────────────────────────────
+function sw(t) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('v'+t[0].toUpperCase()+t.slice(1)).classList.add('on');
+  document.getElementById('t'+t[0].toUpperCase()+t.slice(1)).classList.add('on');
+}
+
+// ── CALENDAR ───────────────────────────────────────────────────────────────
+function renderCal() {
+  document.getElementById('calTitle').textContent=`${MON_NAMES[calM]} ${calY}`;
+  const first=new Date(calY,calM,1).getDay();
+  const days=new Date(calY,calM+1,0).getDate();
+  let h=DAY_NAMES.map(d=>`<div class="cdl">${d.slice(0,2)}</div>`).join('');
+  for(let i=0;i<first;i++) h+=`<div class="cc empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const date=new Date(calY,calM,d);
+    const isT=(calY===NOW.getFullYear()&&calM===NOW.getMonth()&&d===NOW.getDate());
+    const isS=(selCalDay===d);
+    const dc=choresFor(date);
+    const dots=dc.slice(0,4).map(c=>`<div class="cdot" style="background:${c.col||'var(--or)'}"></div>`).join('');
+    h+=`<div class="cc${isT?' today':''}${isS?' sel':''}" onclick="selDay(${d})">
+      <div class="cnum">${d}</div>
+      ${dc.length?`<div class="cdots">${dots}</div>`:''}
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML=h;
+}
+
+function selDay(d) {
+  selCalDay=d; renderCal();
+  const date=new Date(calY,calM,d);
+  const dc=choresFor(date);
+  const lbl=date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  let h=`<div class="ddet-t">📅 ${lbl}</div>`;
+  if(!dc.length) h+=`<div class="noday">No chores this day 🎉</div>`;
+  else h+=dc.map(c=>`<div class="dchore">
+    <span>${c.emoji||'🧹'}</span>
+    <span style="flex:1">${esc(c.name)}</span>
+    ${c.time?`<span class="ttag">⏰ ${fmt12(c.time)}</span>`:''}
+  </div>`).join('');
+  document.getElementById('ddet').innerHTML=h;
+}
+
+function calNav(dir) {
+  calM+=dir;
+  if(calM>11){calM=0;calY++;}
+  if(calM<0) {calM=11;calY--;}
+  selCalDay=null; renderCal();
+  document.getElementById('ddet').innerHTML='<div class="noday">Tap a day to see chores 👆</div>';
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────
+function buildEPk() {
+  document.getElementById('epk').innerHTML=EMOJIS.map(e=>
+    `<div class="eo${e===selEmoji?' on':''}" onclick="pEmoji(this,'${e}')">${e}</div>`).join('');
+}
+function buildCPk() {
+  document.getElementById('cpk').innerHTML=COLS.map(c=>
+    `<div class="cdx${c===selCol?' on':''}" style="background:${c}" onclick="pCol(this,'${c}')"></div>`).join('');
+}
+function pEmoji(el,e){document.querySelectorAll('.eo').forEach(x=>x.classList.remove('on'));el.classList.add('on');selEmoji=e;}
+function pCol(el,c){document.querySelectorAll('.cdx').forEach(x=>x.classList.remove('on'));el.classList.add('on');selCol=c;}
+function pickFreq(el){
+  document.querySelectorAll('.fq').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on'); selFreq=el.dataset.f;
+  document.getElementById('dayRow').style.display=(selFreq==='weekly'||selFreq==='custom')?'block':'none';
+}
+function toggleDay(el){
+  const d=parseInt(el.dataset.d);
+  el.classList.toggle('on');
+  if(el.classList.contains('on'))selDays.push(d);else selDays=selDays.filter(x=>x!==d);
+}
+
+function openModal(id) {
+  editId=id; selDays=[];
+  document.querySelectorAll('.dc').forEach(x=>x.classList.remove('on'));
+  if(id){
+    const c=chores.find(x=>x.id===id);
+    document.getElementById('mtit').textContent='Edit Chore ✏️';
+    document.getElementById('cName').value=c.name;
+    document.getElementById('cTime').value=c.time||'08:00';
+    selEmoji=c.emoji||EMOJIS[0]; selCol=c.col||COLS[0]; selFreq=c.freq||'daily';
+    selDays=[...(c.days||[])];
+    document.querySelectorAll('.dc').forEach(x=>{if(selDays.includes(parseInt(x.dataset.d)))x.classList.add('on');});
+  } else {
+    document.getElementById('mtit').textContent='New Chore ✨';
+    document.getElementById('cName').value='';
+    document.getElementById('cTime').value='08:00';
+    selEmoji=EMOJIS[0]; selCol=COLS[0]; selFreq='daily'; selDays=[];
+  }
+  document.querySelectorAll('.fq').forEach(x=>x.classList.toggle('on',x.dataset.f===selFreq));
+  document.getElementById('dayRow').style.display=(selFreq==='weekly'||selFreq==='custom')?'block':'none';
+  buildEPk(); buildCPk();
+  document.getElementById('ov').classList.add('on');
+}
+function closeModal(){document.getElementById('ov').classList.remove('on');}
+function ovClick(e){if(e.target===document.getElementById('ov'))closeModal();}
+
+function saveChore() {
+  const name=document.getElementById('cName').value.trim();
+  if(!name){document.getElementById('cName').focus();return;}
+  const time=document.getElementById('cTime').value;
+  const obj={
+    id: editId||String(Date.now()),
+    name, emoji:selEmoji, col:selCol,
+    freq:selFreq, days:[...selDays], time
+  };
+  if(editId){
+    cancelReminder(editId);
+    chores=chores.map(c=>c.id===editId?obj:c);
+  } else {
+    chores.push(obj);
+  }
+  scheduleReminder(obj);
+  save(); closeModal(); renderList(); renderCal();
+  toast('✅ Chore saved!');
+}
+
+// ── REMINDERS (Android bridge + fallback) ──────────────────────────────────
+function scheduleReminder(c) {
+  // 1. Android native bridge (APK)
+  if(window.Android&&typeof window.Android.scheduleReminder==='function'){
+    window.Android.scheduleReminder(
+      c.id, c.name, c.emoji||'🧹', c.time||'08:00',
+      c.freq, JSON.stringify(c.days||[])
+    );
+    return;
+  }
+  // 2. Browser Notification API fallback (for testing in browser)
+  if('Notification' in window){
+    Notification.requestPermission().then(p=>{
+      if(p!=='granted') return;
+      scheduleWebNotif(c);
+    });
+  }
+}
+
+function cancelReminder(id) {
+  if(window.Android&&typeof window.Android.cancelReminder==='function'){
+    window.Android.cancelReminder(id);
+  }
+}
+
+function scheduleWebNotif(c) {
+  // Fire a one-shot notification at the right time today (browser only)
+  if(!c.time) return;
+  const [h,m]=c.time.split(':').map(Number);
+  const now=new Date(), fire=new Date();
+  fire.setHours(h,m,0,0);
+  if(fire<=now) fire.setDate(fire.getDate()+1);
+  const ms=fire-now;
+  setTimeout(()=>{
+    if(dueOn(c,new Date())){
+      new Notification(`${c.emoji||'🧹'} ${c.name}`,{body:`Time to: ${c.name}!`,icon:''});
+    }
+  },ms);
+}
+
+// Re-schedule all reminders on app start (covers reboot / reinstall)
+function rescheduleAll() {
+  chores.forEach(c=>{ if(c.time) scheduleReminder(c); });
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),2000);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+function init(){
+  load();
+  calY=NOW.getFullYear(); calM=NOW.getMonth();
+  // Seed demo data
+  if(!chores.length){
+    chores=[
+      {id:'1',name:'Wash Dishes',emoji:'🍽️',col:'#FF6B35',freq:'odd', days:[],time:'19:00'},
+      {id:'2',name:'Take Out Trash',emoji:'🗑️',col:'#EF476F',freq:'daily',days:[],time:'08:00'},
+      {id:'3',name:'Laundry',emoji:'👕',col:'#9B5DE5',freq:'weekly',days:[1],time:'10:00'},
+      {id:'4',name:'Vacuum',emoji:'🧹',col:'#118AB2',freq:'weekends',days:[],time:'11:00'},
+    ];
+    save();
+  }
+  renderList(); renderCal(); rescheduleAll();
+}
+init();
+</script>
+</body>
+</html>
