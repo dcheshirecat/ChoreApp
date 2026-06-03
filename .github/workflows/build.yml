@@ -34,12 +34,10 @@ jobs:
 
       - name: Generate all Android project files
         run: |
-          # Write the generator script (base64 → /tmp/gen_script.b64 → /tmp/gen.py)
           printf "%s" "aW1wb3J0IGJhc2U2NCwganNvbiwgb3MKZmlsZXNfYjY0ID0gb3BlbignL3RtcC9wZi5iNjQnKS5yZWFkKCkuc3RyaXAoKQpmaWxlcyA9IGpzb24ubG9hZHMoYmFzZTY0LmI2NGRlY29kZShmaWxlc19iNjQpLmRlY29kZSgndXRmLTgnKSkKZm9yIHBhdGgsIGNvbnRl" > /tmp/gen_script.b64
           printf "%s" "bnQgaW4gZmlsZXMuaXRlbXMoKToKICAgIG9zLm1ha2VkaXJzKG9zLnBhdGguZGlybmFtZShwYXRoKSwgZXhpc3Rfb2s9VHJ1ZSkKICAgIHdpdGggb3BlbihwYXRoLCAndycsIGVuY29kaW5nPSd1dGYtOCcpIGFzIGZoOgogICAgICAgIGZoLndyaXRlKGNvbnRlbnQp" >> /tmp/gen_script.b64
           printf "%s" "CiAgICBwcmludCgnV3JvdGUnLCBwYXRoKQo=" >> /tmp/gen_script.b64
           base64 -d /tmp/gen_script.b64 > /tmp/gen.py
-          # Write the project files data (base64 → /tmp/pf.b64)
           printf "%s" "eyJDaG9yZUNoYW1waW9uL3NldHRpbmdzLmdyYWRsZSI6ICJyb290UHJvamVjdC5uYW1lID0gXCJDaG9yZUNoYW1waW9uXCJcbmluY2x1ZGUgJzphcHAnXG4iLCAiQ2hvcmVDaGFtcGlvbi9idWlsZC5ncmFkbGUiOiAiYnVpbGRzY3JpcHQge1xuICAgIHJlcG9zaXRv" > /tmp/pf.b64
           printf "%s" "cmllcyB7XG4gICAgICAgIGdvb2dsZSgpXG4gICAgICAgIG1hdmVuQ2VudHJhbCgpXG4gICAgfVxuICAgIGRlcGVuZGVuY2llcyB7XG4gICAgICAgIGNsYXNzcGF0aCAnY29tLmFuZHJvaWQudG9vbHMuYnVpbGQ6Z3JhZGxlOjguMy4yJ1xuICAgIH1cbn1cbmFsbHBy" >> /tmp/pf.b64
           printf "%s" "b2plY3RzIHtcbiAgICByZXBvc2l0b3JpZXMge1xuICAgICAgICBnb29nbGUoKVxuICAgICAgICBtYXZlbkNlbnRyYWwoKVxuICAgIH1cbn1cbnRhc2sgY2xlYW4odHlwZTogRGVsZXRlKSB7XG4gICAgZGVsZXRlIHJvb3RQcm9qZWN0LmJ1aWxkRGlyXG59XG4iLCAi" >> /tmp/pf.b64
@@ -130,8 +128,8 @@ jobs:
           printf "%s" "UmVjZWl2ZXIuamF2YSI6ICJwYWNrYWdlIGNvbS5jaG9yZWNoYW1waW9uLmFwcDtcblxuaW1wb3J0IGFuZHJvaWQuY29udGVudC5Ccm9hZGNhc3RSZWNlaXZlcjtcbmltcG9ydCBhbmRyb2lkLmNvbnRlbnQuQ29udGV4dDtcbmltcG9ydCBhbmRyb2lkLmNvbnRlbnQu" >> /tmp/pf.b64
           printf "%s" "SW50ZW50O1xuXG5wdWJsaWMgY2xhc3MgQm9vdFJlY2VpdmVyIGV4dGVuZHMgQnJvYWRjYXN0UmVjZWl2ZXIge1xuICAgIEBPdmVycmlkZVxuICAgIHB1YmxpYyB2b2lkIG9uUmVjZWl2ZShDb250ZXh0IGN0eCwgSW50ZW50IGludGVudCkge1xuICAgICAgICBpZiAo" >> /tmp/pf.b64
           printf "%s" "SW50ZW50LkFDVElPTl9CT09UX0NPTVBMRVRFRC5lcXVhbHMoaW50ZW50LmdldEFjdGlvbigpKSkge1xuICAgICAgICAgICAgSW50ZW50IGxhdW5jaCA9IG5ldyBJbnRlbnQoY3R4LCBNYWluQWN0aXZpdHkuY2xhc3MpO1xuICAgICAgICAgICAgbGF1bmNoLmFkZEZs" >> /tmp/pf.b64
-          printf "%s" "YWdzKEludGVudC5GTEFHX0FDVElWSVRZX05FV19UQVNLKTtcbiAgICAgICAgICAgIGN0eC5zdGFydEFjdGl2aXR5KGxhdW5jaCk7XG4gICAgICAgIH1cbiAgICB9XG59XG4ifQ==" >> /tmp/pf.b64
-          # Run the generator
+          printf "%s" "YWdzKEludGVudC5GTEFHX0FDVElWSVRZX05FV19UQVNLKTtcbiAgICAgICAgICAgIGN0eC5zdGFydEFjdGl2aXR5KGxhdW5jaCk7XG4gICAgICAgIH1cbiAgICB9XG59XG4iLCAiQ2hvcmVDaGFtcGlvbi9ncmFkbGUucHJvcGVydGllcyI6ICJhbmRyb2lkLnVzZUFu" >> /tmp/pf.b64
+          printf "%s" "ZHJvaWRYPXRydWVcbmFuZHJvaWQuZW5hYmxlSmV0aWZpZXI9dHJ1ZVxub3JnLmdyYWRsZS5qdm1hcmdzPS1YbXgyMDQ4bSAtRGZpbGUuZW5jb2Rpbmc9VVRGLThcbiJ9" >> /tmp/pf.b64
           python3 /tmp/gen.py
 
       - name: Copy index.html into assets
