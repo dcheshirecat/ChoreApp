@@ -31,8 +31,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);
 
 /* TABS */
 .tabs{display:flex;gap:8px;padding:8px 16px 10px;background:var(--bg);flex-shrink:0}
-.tab{flex:1;padding:9px 6px;border:none;border-radius:12px;
-     font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+.tab{flex:1;padding:9px 4px;border:none;border-radius:12px;
+     font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
      cursor:pointer;background:#fff;color:var(--mt);
      box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .18s}
 .tab.on{background:var(--or);color:#fff;
@@ -205,7 +205,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);
   </div>
 
   <div class="tabs">
-    <button class="tab on" id="tList" onclick="sw('list')">📋 List</button>
+    <button class="tab on" id="tList" onclick="sw('list')">📋 Today</button>
+    <button class="tab"    id="tAll"  onclick="sw('all')">✏️ All</button>
     <button class="tab"    id="tCal"  onclick="sw('cal')">📅 Calendar</button>
   </div>
 
@@ -214,6 +215,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);
       <div class="stats" id="stats"></div>
       <div id="todayList"></div>
       <div id="upList"></div>
+    </div>
+
+    <div class="view" id="vAll">
+      <div id="allList"></div>
     </div>
 
     <div class="view" id="vCal">
@@ -231,6 +236,19 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);
 <button class="fab" onclick="openModal(null)">＋</button>
 
 <!-- MODAL -->
+<!-- DELETE CONFIRM OVERLAY -->
+<div class="ov" id="confirmOv">
+  <div class="modal" style="padding-bottom:24px">
+    <div class="mhndl"></div>
+    <div style="font-size:48px;text-align:center;margin:8px 0" id="confirmEmoji">🗑️</div>
+    <div class="mtit" style="font-size:18px;margin-bottom:8px" id="confirmMsg">Delete this chore?</div>
+    <div style="color:var(--mt);font-size:13px;text-align:center;margin-bottom:20px;font-weight:600">This cannot be undone.</div>
+    <button class="bsv" style="background:linear-gradient(135deg,#EF476F,#c0392b)"
+      onclick="confirmDelete()">🗑️ Delete</button>
+    <button class="bcn" onclick="closeConfirm()">Cancel</button>
+  </div>
+</div>
+
 <div class="ov" id="ov" onclick="ovClick(event)">
   <div class="modal">
     <div class="mhndl"></div>
@@ -283,10 +301,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);
         <div class="fq on" data-f="daily"    onclick="pickFreq(this)">Every day</div>
         <div class="fq"    data-f="weekdays" onclick="pickFreq(this)">Weekdays</div>
         <div class="fq"    data-f="weekends" onclick="pickFreq(this)">Weekends</div>
-        <div class="fq"    data-f="odd"      onclick="pickFreq(this)">Odd days</div>
-        <div class="fq"    data-f="even"     onclick="pickFreq(this)">Even days</div>
+        <div class="fq"    data-f="odd"      onclick="pickFreq(this)">Sun·Tue·Thu·Sat</div>
+        <div class="fq"    data-f="even"     onclick="pickFreq(this)">Mon·Wed·Fri</div>
         <div class="fq"    data-f="weekly"   onclick="pickFreq(this)">Weekly</div>
-        <div class="fq"    data-f="custom"   onclick="pickFreq(this)">Custom</div>
+        <div class="fq"    data-f="custom"   onclick="pickFreq(this)">Custom days</div>
+        <div class="fq"    data-f="once"     onclick="pickFreq(this)">Once 📅</div>
       </div>
     </div>
     <div class="fg" id="dayRow" style="display:none">
@@ -301,6 +320,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);
         <div class="dc" data-d="6" onclick="toggleDay(this)">Sat</div>
       </div>
     </div>
+    <div class="fg" id="onceRow" style="display:none">
+      <label class="fl">Which date?</label>
+      <input class="fi" type="date" id="cOnceDate"/>
+    </div>
+
     <div class="fg">
       <label class="fl">Reminder Time</label>
       <input class="fi" type="time" id="cTime" value="08:00"/>
@@ -430,28 +454,52 @@ function initSliders(){
 
 // ── FREQUENCY ─────────────────────────────────────────────────────────────
 function dueOn(c,date){
-  const d=date.getDate(),dow=date.getDay();
+  const dow=date.getDay(); // 0=Sun
   if(c.freq==='daily')    return true;
   if(c.freq==='weekdays') return dow>=1&&dow<=5;
   if(c.freq==='weekends') return dow===0||dow===6;
-  if(c.freq==='odd')      return d%2!==0;
-  if(c.freq==='even')     return d%2===0;
+  if(c.freq==='odd')      return [0,2,4,6].includes(dow);
+  if(c.freq==='even')     return [1,3,5].includes(dow);
   if(c.freq==='weekly'||c.freq==='custom') return(c.days||[]).includes(dow);
+  if(c.freq==='once'){
+    if(!c.onceDate) return false;
+    // Compare YYYY-MM-DD strings so timezone never shifts the date
+    const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,'0'),
+          d=String(date.getDate()).padStart(2,'0');
+    return c.onceDate===`${y}-${m}-${d}`;
+  }
   return false;
 }
 function fLabel(c){
   if(c.freq==='daily')    return 'Every day';
   if(c.freq==='weekdays') return 'Weekdays';
   if(c.freq==='weekends') return 'Weekends';
-  if(c.freq==='odd')      return 'Odd days';
-  if(c.freq==='even')     return 'Even days';
-  if(c.freq==='weekly'||c.freq==='custom') return(c.days||[]).map(d=>DAY_NAMES[d]).join(', ');
+  if(c.freq==='odd')      return 'Sun · Tue · Thu · Sat';
+  if(c.freq==='even')     return 'Mon · Wed · Fri';
+  if(c.freq==='weekly'||c.freq==='custom') return(c.days||[]).map(d=>DAY_NAMES[d]).join(' · ');
+  if(c.freq==='once' && c.onceDate){
+    const [y,m,d]=c.onceDate.split('-');
+    const dt=new Date(+y,+m-1,+d);
+    return '📅 '+dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
   return c.freq;
 }
 function choresFor(date){return chores.filter(c=>dueOn(c,date));}
 
 // ── RENDER LIST ───────────────────────────────────────────────────────────
 function renderList(){
+  // Auto-remove 'once' chores whose date has already passed
+  const todayStr=(()=>{
+    const y=NOW.getFullYear(),m=String(NOW.getMonth()+1).padStart(2,'0'),
+          d=String(NOW.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  })();
+  const before=chores.length;
+  chores=chores.filter(c=>
+    c.freq!=='once' || !c.onceDate || c.onceDate>=todayStr
+  );
+  if(chores.length<before) save();
+
   const tc=choresFor(NOW), dk=done[TK]||[];
   const pending=tc.filter(c=>!dk.includes(c.id)).length;
   document.getElementById('hDate').textContent=NOW.toLocaleDateString('en-US',{month:'short',day:'numeric'});
@@ -487,15 +535,47 @@ function renderList(){
   document.getElementById('upList').innerHTML=up;
 }
 
-function cardHTML(c,isDone=false,preview=false){
+function renderAll(){
+  const el=document.getElementById('allList');
+  if(!chores.length){
+    el.innerHTML='<div class="empty"><div class="be">🌟</div><p>No chores yet — tap + to add one!</p></div>';
+    return;
+  }
+  // Group by frequency for readability
+  const groups={};
+  chores.forEach(c=>{
+    const lbl=fLabel(c);
+    if(!groups[lbl]) groups[lbl]=[];
+    groups[lbl].push(c);
+  });
+  let h='<div style="padding-top:12px"></div>';
+  Object.entries(groups).forEach(([lbl,list])=>{
+    h+=`<div class="sec" style="font-size:13px;color:var(--mt)">📌 ${lbl}</div>`;
+    h+=list.map(c=>cardHTML(c,false,false,true)).join('');
+  });
+  el.innerHTML=h;
+}
+
+function cardHTML(c,isDone=false,preview=false,manage=false){
   const col=c.col||'var(--or)';
   const tTag=c.time?`<span class="ttag">⏰ ${fmt12(c.time)}</span>`:'';
-  const acts=preview?'':
-    `<div class="acts">
-       <button class="bi bck" onclick="toggleDone('${c.id}')">${isDone?'↩️':'✅'}</button>
-       <button class="bi bed" onclick="openModal('${c.id}')">✏️</button>
-       <button class="bi bdl" onclick="del('${c.id}')">🗑️</button>
-     </div>`;
+  // preview = upcoming section (no actions)
+  // manage  = all-chores tab (edit+delete but no check)
+  let acts='';
+  if(!preview){
+    if(manage){
+      acts=`<div class="acts">
+        <button class="bi bed" onclick="openModal('${c.id}')">✏️</button>
+        <button class="bi bdl" onclick="askDel('${c.id}','${c.emoji||'🧹'}','${esc(c.name)}')">🗑️</button>
+      </div>`;
+    } else {
+      acts=`<div class="acts">
+        <button class="bi bck" onclick="toggleDone('${c.id}')">${isDone?'↩️':'✅'}</button>
+        <button class="bi bed" onclick="openModal('${c.id}')">✏️</button>
+        <button class="bi bdl" onclick="askDel('${c.id}','${c.emoji||'🧹'}','${esc(c.name)}')">🗑️</button>
+      </div>`;
+    }
+  }
   return `<div class="card${isDone?' done':''}" style="border-left-color:${col}">
     <div class="cem" style="background:${col}22;border-radius:10px;padding:4px">${c.emoji||'🧹'}</div>
     <div class="ci">
@@ -517,17 +597,37 @@ function toggleDone(id){
   if(i===-1)a.push(id);else a.splice(i,1);
   done[TK]=a;save();renderList();
 }
-function del(id){
-  if(!confirm('Delete this chore?'))return;
-  cancelReminder(id);
-  chores=chores.filter(c=>c.id!==id);
-  save();renderList();renderCal();toast('🗑️ Deleted');
+// pending delete id — set by askDel, consumed by confirmDelete
+let _delId=null;
+
+function askDel(id, emoji, name){
+  _delId=id;
+  document.getElementById('confirmEmoji').textContent=emoji||'🗑️';
+  document.getElementById('confirmMsg').textContent='Delete "'+name+'"?';
+  document.getElementById('confirmOv').classList.add('on');
+}
+function closeConfirm(){
+  _delId=null;
+  document.getElementById('confirmOv').classList.remove('on');
+}
+function confirmDelete(){
+  if(!_delId) return;
+  cancelReminder(_delId);
+  chores=chores.filter(c=>c.id!==_delId);
+  _delId=null;
+  document.getElementById('confirmOv').classList.remove('on');
+  save(); renderList(); renderAll(); renderCal();
+  toast('🗑️ Deleted');
 }
 function sw(t){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
-  document.getElementById('v'+t[0].toUpperCase()+t.slice(1)).classList.add('on');
-  document.getElementById('t'+t[0].toUpperCase()+t.slice(1)).classList.add('on');
+  // Map tab id: list→List, all→All, cal→Cal
+  const vId = {list:'vList', all:'vAll', cal:'vCal'}[t];
+  const tId = {list:'tList', all:'tAll', cal:'tCal'}[t];
+  if(vId) document.getElementById(vId).classList.add('on');
+  if(tId) document.getElementById(tId).classList.add('on');
+  if(t==='all') renderAll();
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────
@@ -594,9 +694,11 @@ function pickSwatch(col){
 }
 function pickFreq(el){
   document.querySelectorAll('.fq').forEach(x=>x.classList.remove('on'));
-  el.classList.add('on');selFreq=el.dataset.f;
+  el.classList.add('on'); selFreq=el.dataset.f;
   document.getElementById('dayRow').style.display=
-    (selFreq==='weekly'||selFreq==='custom')?'block':'none';
+    (selFreq==='weekly'||selFreq==='custom') ? 'block' : 'none';
+  document.getElementById('onceRow').style.display=
+    selFreq==='once' ? 'block' : 'none';
 }
 function toggleDay(el){
   const d=parseInt(el.dataset.d);
@@ -605,32 +707,66 @@ function toggleDay(el){
 }
 
 function openModal(id){
-  editId=id;selDays=[];
+  editId=id;
+  selDays=[];
+  // Reset day chips
   document.querySelectorAll('.dc').forEach(x=>x.classList.remove('on'));
+
   if(id){
+    // ── EDIT MODE ──────────────────────────────────────────
     const c=chores.find(x=>x.id===id);
+    if(!c){return;}
     document.getElementById('mtit').textContent='Edit Chore ✏️';
     document.getElementById('cName').value=c.name;
     document.getElementById('cTime').value=c.time||'08:00';
-    selEmoji=c.emoji||EMOJIS[0];
-    selCol=c.col||PRESETS[0];
-    selFreq=c.freq||'daily';
-    selDays=[...(c.days||[])];
+    selEmoji = c.emoji || EMOJIS[0];
+    selCol   = c.col   || PRESETS[0];
+    selFreq  = c.freq  || 'daily';
+    selDays  = [...(c.days||[])];
+    // Restore day chip highlights
     document.querySelectorAll('.dc').forEach(x=>{
-      if(selDays.includes(parseInt(x.dataset.d)))x.classList.add('on');
+      if(selDays.includes(parseInt(x.dataset.d))) x.classList.add('on');
     });
   } else {
+    // ── NEW MODE ───────────────────────────────────────────
     document.getElementById('mtit').textContent='New Chore ✨';
     document.getElementById('cName').value='';
     document.getElementById('cTime').value='08:00';
-    selEmoji=EMOJIS[0];selCol=PRESETS[0];selFreq='daily';selDays=[];
+    selEmoji = EMOJIS[0];
+    selCol   = PRESETS[0];
+    selFreq  = 'daily';
+    selDays  = [];
   }
-  document.querySelectorAll('.fq').forEach(x=>x.classList.toggle('on',x.dataset.f===selFreq));
+
+  // Restore frequency chip highlight
+  document.querySelectorAll('.fq').forEach(x=>
+    x.classList.toggle('on', x.dataset.f===selFreq));
+
+  // Show day-picker only for weekly/custom
   document.getElementById('dayRow').style.display=
-    (selFreq==='weekly'||selFreq==='custom')?'block':'none';
+    (selFreq==='weekly'||selFreq==='custom') ? 'block' : 'none';
+  // Show date-picker only for once
+  document.getElementById('onceRow').style.display=
+    selFreq==='once' ? 'block' : 'none';
+  // Restore or default the once-date
+  const onceDateEl = document.getElementById('cOnceDate');
+  if(id && selFreq==='once' && chores.find(x=>x.id===id)?.onceDate){
+    onceDateEl.value = chores.find(x=>x.id===id).onceDate;
+  } else if(selFreq!=='once') {
+    // Pre-fill with tomorrow as a sensible default
+    const tom = new Date(); tom.setDate(tom.getDate()+1);
+    onceDateEl.value = tom.toISOString().slice(0,10);
+  }
+
+  // Restore color picker
   updatePickerFromHex(selCol);
-  buildEPk();buildSwatches();refreshSliders();
+  buildEPk();
+  buildSwatches();
+  refreshSliders();
+
   document.getElementById('ov').classList.add('on');
+  // Focus name field after a tick so keyboard opens smoothly
+  setTimeout(()=>document.getElementById('cName').focus(), 320);
 }
 function closeModal(){document.getElementById('ov').classList.remove('on');}
 function ovClick(e){if(e.target===document.getElementById('ov'))closeModal();}
@@ -638,16 +774,22 @@ function ovClick(e){if(e.target===document.getElementById('ov'))closeModal();}
 function saveChore(){
   const name=document.getElementById('cName').value.trim();
   if(!name){document.getElementById('cName').focus();return;}
+  const onceDate = selFreq==='once'
+    ? document.getElementById('cOnceDate').value : null;
+  if(selFreq==='once' && !onceDate){
+    document.getElementById('cOnceDate').focus(); return;
+  }
   const obj={
     id:editId||String(Date.now()),
     name,emoji:selEmoji,col:selCol,
     freq:selFreq,days:[...selDays],
-    time:document.getElementById('cTime').value
+    time:document.getElementById('cTime').value,
+    onceDate: onceDate||null
   };
   if(editId){cancelReminder(editId);chores=chores.map(c=>c.id===editId?obj:c);}
   else chores.push(obj);
   scheduleReminder(obj);
-  save();closeModal();renderList();renderCal();
+  save();closeModal();renderList();renderAll();renderCal();
   toast('✅ Saved!');
 }
 
@@ -655,7 +797,7 @@ function saveChore(){
 function scheduleReminder(c){
   if(window.Android&&typeof window.Android.scheduleReminder==='function'){
     window.Android.scheduleReminder(c.id,c.name,c.emoji||'🧹',c.time||'08:00',
-      c.freq,JSON.stringify(c.days||[]));return;
+      c.freq,JSON.stringify(c.days||[]),c.onceDate||'');return;
   }
   if('Notification' in window){
     Notification.requestPermission().then(p=>{if(p==='granted')scheduleWebNotif(c);});
@@ -692,7 +834,7 @@ function init(){
   initSliders();
   if(!chores.length){
     chores=[
-      {id:'1',name:'Wash Dishes',emoji:'🍽️',col:'#FF6B35',freq:'odd', days:[],time:'19:00'},
+      {id:'1',name:'Wash Dishes',emoji:'🍽️',col:'#FF6B35',freq:'odd',days:[],time:'19:00'},
       {id:'2',name:'Take Out Trash',emoji:'🗑️',col:'#EF476F',freq:'daily',days:[],time:'08:00'},
       {id:'3',name:'Laundry',emoji:'👕',col:'#9B5DE5',freq:'weekly',days:[1],time:'10:00'},
       {id:'4',name:'Vacuum',emoji:'🧹',col:'#118AB2',freq:'weekends',days:[],time:'11:00'},
